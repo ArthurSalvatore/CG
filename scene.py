@@ -5,7 +5,7 @@ from OpenGL.GLU import *
 
 def draw_ground():
     glColor3f(0.4, 0.4, 0.4)  # Cor do chão
-    size = 70  # Aumentado ainda mais para cobrir toda a área visível
+    size = 70  
     glBegin(GL_QUADS)
     glVertex3f(-size, 0, -size)
     glVertex3f(size, 0, -size)
@@ -191,7 +191,7 @@ def draw_leisure_area():
     glVertex3f(5, 0.05, -5)
     glEnd()
 
-    # Colunas (cilindros para mais realismo)
+    # Colunas 
     glColor3f(0.4, 0.2, 0.1)
     for x in [5.5, 19.5]:
         for z in [-19.5, -5.5]:
@@ -201,7 +201,7 @@ def draw_leisure_area():
             glutSolidCylinder(0.2, 3, 12, 12)
             glPopMatrix()
 
-    # Telhado separado (para efeito de cobertura)
+    # Telhado 
     glColor3f(0.5, 0.3, 0.1)
     glBegin(GL_QUADS)
     glVertex3f(4.5, 3, -20.5)
@@ -212,14 +212,13 @@ def draw_leisure_area():
 
     glPopMatrix()
 
-
-
 def draw_skybox():
     glPushMatrix()
+    glDisable(GL_LIGHTING)
+    glDisable(GL_DEPTH_TEST)
     glDepthMask(GL_FALSE)
 
-    glColor3f(0.5, 0.7, 1.0)  # Azul céu
-
+    glColor3f(0.5, 0.7, 1.0)
     size = 500
 
     glBegin(GL_QUADS)
@@ -228,31 +227,26 @@ def draw_skybox():
     glVertex3f(size, -size, -size)
     glVertex3f(size, size, -size)
     glVertex3f(-size, size, -size)
-
     # Fundo
     glVertex3f(-size, -size, size)
     glVertex3f(size, -size, size)
     glVertex3f(size, size, size)
     glVertex3f(-size, size, size)
-
     # Esquerda
     glVertex3f(-size, -size, -size)
     glVertex3f(-size, -size, size)
     glVertex3f(-size, size, size)
     glVertex3f(-size, size, -size)
-
     # Direita
     glVertex3f(size, -size, -size)
     glVertex3f(size, -size, size)
     glVertex3f(size, size, size)
     glVertex3f(size, size, -size)
-
     # Topo
     glVertex3f(-size, size, -size)
     glVertex3f(size, size, -size)
     glVertex3f(size, size, size)
     glVertex3f(-size, size, size)
-
     # Base
     glVertex3f(-size, -size, -size)
     glVertex3f(size, -size, -size)
@@ -312,13 +306,38 @@ def draw_walls():
     glVertex3f(size + 0.01, wall_height, -10)
     glEnd()
 
-def draw_sun():
+def draw_collision_debug(player, collision_objects):
+    glDisable(GL_LIGHTING)
+    
+    # Desenha o raio de colisão do jogador
+    glColor3f(0.0, 1.0, 0.0)  # Verde
     glPushMatrix()
-    glTranslatef(80, 40, -30)  # Posição no céu
-    glColor3f(1.0, 1.0, 0.0)  # Amarelo
-    glutSolidSphere(3, 20, 20)
+    glTranslatef(player.x, 0.1, player.z)
+    glutWireSphere(player.collision_radius, 12, 12)
     glPopMatrix()
-
+    
+    # Desenha os objetos de colisão
+    for obj in collision_objects:
+        if obj.get('no_collide', False):
+            continue
+            
+        glColor3f(1.0, 0.0, 0.0)  # Vermelho
+        if obj['type'] == 'rectangle':
+            x_min, x_max, z_min, z_max = obj['coords']
+            glBegin(GL_LINE_LOOP)
+            glVertex3f(x_min, 0.1, z_min)
+            glVertex3f(x_max, 0.1, z_min)
+            glVertex3f(x_max, 0.1, z_max)
+            glVertex3f(x_min, 0.1, z_max)
+            glEnd()
+        elif obj['type'] == 'circle':
+            cx, cz, radius = obj['coords']
+            glPushMatrix()
+            glTranslatef(cx, 0.1, cz)
+            glutWireSphere(radius, 12, 12)
+            glPopMatrix()
+    
+    glEnable(GL_LIGHTING)
 def draw_guardhouse():
     glPushMatrix()
     # Ajuste a posição para dentro do cenário no lado do portão

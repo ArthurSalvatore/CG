@@ -20,15 +20,35 @@ posicoes_camera = [
 window_width = 1080
 window_height = 1920
 
-collision_boxes = [
-    (-25, 15, 0, 40),
-    (-21, -19, -9, -1),
-    (-11, -9, -9, -1),
-    (-1, 1, -9, -1)
+collision_objects = [
+    # Prédio principal
+    {'type': 'rectangle', 'coords': (-25, 15, 20, 40)},
+        
+    # Muros externos
+    {'type': 'rectangle', 'coords': (-70, -50, -50, 70)},
+    {'type': 'rectangle', 'coords': (50, 70, -40, 70)},
+    {'type': 'rectangle', 'coords': (-70, 70, -50, -65)},
+    {'type': 'rectangle', 'coords': (-50, 50, 50, 50)},
+    
+    # Guarita
+    {'type': 'rectangle', 'coords': (46, 50, 12, 16)},
+    
+    # Árvores 
+    *[{'type': 'circle', 'coords': (x, -25, 0.8)} for x in range(-25, 26, 5)],
+    
+    # Carros 
+    *[{'type': 'rectangle', 'coords': (x-1.5, x+1.5, 10, 15)} for x in range(-30, -5, 5)],
+    
+    # Exceção 
+    {'type': 'rectangle', 'coords': (0.8, 1.2, 1.8, 2.2), 'no_collide': True}
 ]
-
 def lerp(start, end, t):
     return start + (end - start) * t
+
+
+def keyboard(key, x, y):
+    player.keyboard(key, collision_objects)
+
 
 def init():
     glClearColor(0.5, 0.7, 1.0, 1.0)
@@ -58,10 +78,10 @@ def display():
     scene.draw_garage()
     scene.draw_leisure_area()
 
-    player.draw()
+
 
     player.draw()
-
+    scene.draw_collision_debug(player, collision_objects)  # Adicione esta linha
     glutSwapBuffers()
 
 def reshape(w, h):
@@ -74,9 +94,9 @@ def keyboard(key, x, y):
     if key == b'\x1b':
         glutLeaveMainLoop()
     elif key == b'w':
-        player.move_forward(collision_boxes)
+        player.move_forward(collision_objects)
     elif key == b's':
-        player.move_backward(collision_boxes)
+        player.move_backward(collision_objects)
     elif key == b'a':
         player.rotate_left()
     elif key == b'd':
