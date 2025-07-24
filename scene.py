@@ -1,61 +1,245 @@
 from OpenGL.GL import *
 from OpenGL.GLUT import *
 from OpenGL.GLU import *
+import numpy as np
 
+textures = {}
+
+def load_png_as_texture(filepath):
+    from PIL import Image
+    import numpy as np
+    try:
+        img = Image.open(filepath)
+        img = img.convert('RGB')  # Garante que a imagem esteja em RGB
+        img_data = np.array(img)  # Converte para um array numpy
+        size = img.size  # Tamanho da imagem (largura e altura)
+
+        print(f"Carregando textura: {filepath}, tamanho: {size}")
+
+        tex_id = glGenTextures(1)
+        glBindTexture(GL_TEXTURE_2D, tex_id)
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, size[0], size[1], 0,
+                    GL_RGB, GL_UNSIGNED_BYTE, img_data)
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR)
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR)
+        glGenerateMipmap(GL_TEXTURE_2D)
+
+        return tex_id
+    except Exception as e:
+        print(f"Erro ao carregar a textura : {str(e)}")
+        return None
+
+
+def init_textures():
+    global textures
+    from PIL import Image
+    import numpy as np
+    
+    
+    # Carrega a textura do chão
+    try:
+        img = Image.open("textures/ground_texture.jpg")
+        img_data = np.array(list(img.getdata()), np.uint8)
+        
+        textures['ground'] = glGenTextures(1)
+        glBindTexture(GL_TEXTURE_2D, textures['ground'])
+        
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT)
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT)
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR)
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR)
+        
+        gluBuild2DMipmaps(GL_TEXTURE_2D, GL_RGB, img.width, img.height,
+                         GL_RGB, GL_UNSIGNED_BYTE, img_data)
+    except Exception as e:
+        print(f"Erro ao carregar textura: {str(e)}")
+        textures['ground'] = None
+    try:
+        img = Image.open("textures/brick_wall_diffuse.jpg")
+        img = img.transpose(Image.FLIP_TOP_BOTTOM)  # Corrige a orientação
+        img_data = np.array(img)
+        
+        textures['building'] = glGenTextures(1)
+        glBindTexture(GL_TEXTURE_2D, textures['building'])
+        
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT)
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT)
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR)
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR)
+        
+        gluBuild2DMipmaps(GL_TEXTURE_2D, GL_RGB, img.width, img.height,
+                         GL_RGB, GL_UNSIGNED_BYTE, img_data)
+    except Exception as e:
+        print(f"Erro ao carregar textura do prédio: {str(e)}")
+        textures['building'] = None
+    try:
+        img = Image.open("textures/wall_texture.jpg")  # Substitua pelo seu arquivo de textura
+        img = img.transpose(Image.FLIP_TOP_BOTTOM)
+        img_data = np.array(img)
+        
+        textures['wall'] = glGenTextures(1)
+        glBindTexture(GL_TEXTURE_2D, textures['wall'])
+        
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT)
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT)
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR)
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR)
+        
+        gluBuild2DMipmaps(GL_TEXTURE_2D, GL_RGB, img.width, img.height,
+                         GL_RGB, GL_UNSIGNED_BYTE, img_data)
+    except Exception as e:
+        print(f"Erro ao carregar textura dos muros: {str(e)}")
+        textures['wall'] = None
+
+    # Textura da skybox (existente)
+    textures['skybox'] = load_png_as_texture("textures/skybox.png")
 
 def draw_ground():
-    glColor3f(0.4, 0.4, 0.4)  # Cor do chão
-    size = 70  
+    """Desenha o chão do cenário com textura."""
+    if 'ground' not in textures or textures['ground'] is None:
+        # Fallback se a textura não carregar
+        glColor3f(0.4, 0.4, 0.4)
+        size = 70
+        glBegin(GL_QUADS)
+        glVertex3f(-size, 0, -size)
+        glVertex3f(size, 0, -size)
+        glVertex3f(size, 0, size)
+        glVertex3f(-size, 0, size)
+        glEnd()
+        return
+    
+    glEnable(GL_TEXTURE_2D)
+    glBindTexture(GL_TEXTURE_2D, textures['ground'])
+    
+    glColor3f(1, 1, 1)  # Cor branca para textura pura
+    size = 70
+    repeat_count = 20  # Quantas vezes a textura se repete
+    
     glBegin(GL_QUADS)
-    glVertex3f(-size, 0, -size)
-    glVertex3f(size, 0, -size)
-    glVertex3f(size, 0, size)
-    glVertex3f(-size, 0, size)
+    glTexCoord2f(0, 0); glVertex3f(-size, 0, -size)
+    glTexCoord2f(repeat_count, 0); glVertex3f(size, 0, -size)
+    glTexCoord2f(repeat_count, repeat_count); glVertex3f(size, 0, size)
+    glTexCoord2f(0, repeat_count); glVertex3f(-size, 0, size)
     glEnd()
-
+    
+    glDisable(GL_TEXTURE_2D)
 
 def draw_building():
     glPushMatrix()
-    glTranslatef(-25.0, 0.0, 20.0)  # Move o prédio mais para trás no cenário
-
-    # Corpo principal do prédio
-    glColor3f(0.7, 0.7, 0.7)
+    glTranslatef(-25.0, 0.0, 20.0)
+    
+    # 1. Primeiro desenha TODAS as faces com textura
+    if 'building' in textures and textures['building'] is not None:
+        glEnable(GL_TEXTURE_2D)
+        glBindTexture(GL_TEXTURE_2D, textures['building'])
+        glColor3f(1, 1, 1)
+        
+        # Todas as faces (incluindo frente)
+        glBegin(GL_QUADS)
+        # Frente (com coordenadas de textura)
+        glTexCoord2f(0, 0); glVertex3f(0, 0, 0)
+        glTexCoord2f(8, 0); glVertex3f(40, 0, 0)
+        glTexCoord2f(8, 6); glVertex3f(40, 30, 0)
+        glTexCoord2f(0, 6); glVertex3f(0, 30, 0)
+        
+        # Lado direito
+        glTexCoord2f(0, 0); glVertex3f(40, 0, 0)
+        glTexCoord2f(4, 0); glVertex3f(40, 0, 20)
+        glTexCoord2f(4, 6); glVertex3f(40, 30, 20)
+        glTexCoord2f(0, 6); glVertex3f(40, 30, 0)
+        
+        # Lado esquerdo
+        glTexCoord2f(0, 0); glVertex3f(0, 0, 20)
+        glTexCoord2f(4, 0); glVertex3f(0, 0, 0)
+        glTexCoord2f(4, 6); glVertex3f(0, 30, 0)
+        glTexCoord2f(0, 6); glVertex3f(0, 30, 20)
+        
+        # Fundo
+        glTexCoord2f(0, 0); glVertex3f(0, 0, 20)
+        glTexCoord2f(8, 0); glVertex3f(40, 0, 20)
+        glTexCoord2f(8, 6); glVertex3f(40, 30, 20)
+        glTexCoord2f(0, 6); glVertex3f(0, 30, 20)
+        glEnd()
+        
+        glDisable(GL_TEXTURE_2D)
+    
+    # 2. Usa stencil buffer para "recortar" áreas das janelas/porta
+    glEnable(GL_STENCIL_TEST)
+    
+    # Configura stencil buffer para marcar áreas a serem mantidas
+    glStencilFunc(GL_ALWAYS, 1, 0xFF)
+    glStencilOp(GL_KEEP, GL_KEEP, GL_REPLACE)
+    glStencilMask(0xFF)
+    glColorMask(GL_FALSE, GL_FALSE, GL_FALSE, GL_FALSE)
+    glDepthMask(GL_FALSE)
+    
+    # Desenha formas das janelas/porta (apenas no stencil buffer)
+    draw_window_shapes()
+    
+    # Configura para desenhar apenas onde stencil != 1
+    glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE)
+    glDepthMask(GL_TRUE)
+    glStencilFunc(GL_NOTEQUAL, 1, 0xFF)
+    glStencilMask(0x00)
+    
+    # 3. Redesenha a fachada com textura apenas nas áreas não marcadas
+    if 'building' in textures and textures['building'] is not None:
+        glEnable(GL_TEXTURE_2D)
+        glBindTexture(GL_TEXTURE_2D, textures['building'])
+        glColor3f(1, 1, 1)
+        
+        glBegin(GL_QUADS)
+        glTexCoord2f(0, 0); glVertex3f(0, 0, -0.05)  # Ligeiramente atrás
+        glTexCoord2f(8, 0); glVertex3f(40, 0, -0.05)
+        glTexCoord2f(8, 6); glVertex3f(40, 30, -0.05)
+        glTexCoord2f(0, 6); glVertex3f(0, 30, -0.05)
+        glEnd()
+        
+        glDisable(GL_TEXTURE_2D)
+    
+    glDisable(GL_STENCIL_TEST)
+    
+    # 4. Desenha as janelas e porta normalmente (sobre a textura)
+    draw_windows_and_door()
+    
+    # 5. Telhado (sem textura)
+    glColor3f(0.3, 0.3, 0.3)
     glBegin(GL_QUADS)
-    # Fundo
-    glVertex3f(0, 0, 20)
-    glVertex3f(40, 0, 20)
-    glVertex3f(40, 30, 20)
-    glVertex3f(0, 30, 20)
-
-    # Lado esquerdo
-    glVertex3f(0, 0, 0)
-    glVertex3f(0, 0, 20)
-    glVertex3f(0, 30, 20)
-    glVertex3f(0, 30, 0)
-
-    # Lado direito
-    glVertex3f(40, 0, 0)
-    glVertex3f(40, 0, 20)
-    glVertex3f(40, 30, 20)
-    glVertex3f(40, 30, 0)
-
-    # Topo
     glVertex3f(0, 30, 0)
     glVertex3f(40, 30, 0)
     glVertex3f(40, 30, 20)
     glVertex3f(0, 30, 20)
     glEnd()
+    
+    glPopMatrix()
 
-    # Frente (desenhada atrás para portas/janelas aparecerem)
-    glColor3f(0.7, 0.7, 0.7)
+def draw_window_shapes():
+    """Desenha formas das janelas/porta apenas no stencil buffer"""
+    glColor3f(1, 1, 1)  # Cor não importa (não renderiza cor)
+    
+    # Porta
     glBegin(GL_QUADS)
-    glVertex3f(0, 0, 0)
-    glVertex3f(40, 0, 0)
-    glVertex3f(40, 30, 0)
-    glVertex3f(0, 30, 0)
+    glVertex3f(18, 0, 0)
+    glVertex3f(22, 0, 0)
+    glVertex3f(22, 6, 0)
+    glVertex3f(18, 6, 0)
     glEnd()
+    
+    # Janelas
+    for row in range(3):
+        for col in range(4):
+            x0 = 5 + col * 8
+            y0 = 10 + row * 6
+            glBegin(GL_QUADS)
+            glVertex3f(x0, y0, 0)
+            glVertex3f(x0 + 4, y0, 0)
+            glVertex3f(x0 + 4, y0 + 4, 0)
+            glVertex3f(x0, y0 + 4, 0)
+            glEnd()
 
-    # Porta — bem à frente
+def draw_windows_and_door():
+    """Desenha janelas e porta visíveis"""
+    # Porta
     glColor3f(0.4, 0.2, 0.0)
     glBegin(GL_QUADS)
     glVertex3f(18, 0, -0.1)
@@ -63,7 +247,7 @@ def draw_building():
     glVertex3f(22, 6, -0.1)
     glVertex3f(18, 6, -0.1)
     glEnd()
-
+    
     # Janelas
     glColor3f(0.2, 0.5, 0.8)
     for row in range(3):
@@ -77,16 +261,15 @@ def draw_building():
             glVertex3f(x0, y0 + 4, -0.1)
             glEnd()
 
-    glPopMatrix()
 
 def draw_garage():
     glPushMatrix()
     glColor3f(0.4, 0.4, 0.4)
     glBegin(GL_QUADS)
-    glVertex3f(-25, 0.01, -50)
-    glVertex3f(25, 0.01, -50)
-    glVertex3f(25, 0.01, 0)
-    glVertex3f(-25, 0.01, 0)
+    glVertex3f(-25, -0.1, -50)
+    glVertex3f(25, -0.1, -50)
+    glVertex3f(25, -0.1, 0)
+    glVertex3f(-25, -0.1, 0)
     glEnd()
     
     # Vagas com e sem veículos
@@ -173,14 +356,7 @@ def draw_leisure_area():
     glPushMatrix()
     glTranslatef(-25, 0, -25)
 
-    # Base (25x25 unidades)
-    glColor3f(0.8, 0.9, 0.7)  # Verde claro (grama)
-    glBegin(GL_QUADS)
-    glVertex3f(0, 0, -25)
-    glVertex3f(25, 0, -25)
-    glVertex3f(25, 0, 0)
-    glVertex3f(0, 0, 0)
-    glEnd()
+    
 
     # Piso da estrutura (15x15 unidades)
     glColor3f(0.6, 0.4, 0.2)  # Cor de madeira mais escura
@@ -211,100 +387,169 @@ def draw_leisure_area():
     glEnd()
 
     glPopMatrix()
-
 def draw_skybox():
+    size = 1000  # Aumente o tamanho da skybox
     glPushMatrix()
     glDisable(GL_LIGHTING)
     glDisable(GL_DEPTH_TEST)
     glDepthMask(GL_FALSE)
 
-    glColor3f(0.5, 0.7, 1.0)
-    size = 500
+    if 'skybox' in textures and textures['skybox'] is not None:
+        glEnable(GL_TEXTURE_2D)
+        glBindTexture(GL_TEXTURE_2D, textures['skybox'])
+        glColor3f(1, 1, 1)  # Cor branca para textura pura
+    else:
+        glDisable(GL_TEXTURE_2D)
+        glColor3f(0.5, 0.7, 1.0)  # Fallback para cor azul
 
     glBegin(GL_QUADS)
     # Frente
-    glVertex3f(-size, -size, -size)
-    glVertex3f(size, -size, -size)
-    glVertex3f(size, size, -size)
-    glVertex3f(-size, size, -size)
+    glTexCoord2f(0, 0); glVertex3f(-size, -size, -size)
+    glTexCoord2f(1, 0); glVertex3f(size, -size, -size)
+    glTexCoord2f(1, 1); glVertex3f(size, size, -size)
+    glTexCoord2f(0, 1); glVertex3f(-size, size, -size)
     # Fundo
-    glVertex3f(-size, -size, size)
-    glVertex3f(size, -size, size)
-    glVertex3f(size, size, size)
-    glVertex3f(-size, size, size)
+    glTexCoord2f(0, 0); glVertex3f(-size, -size, size)
+    glTexCoord2f(1, 0); glVertex3f(size, -size, size)
+    glTexCoord2f(1, 1); glVertex3f(size, size, size)
+    glTexCoord2f(0, 1); glVertex3f(-size, size, size)
     # Esquerda
-    glVertex3f(-size, -size, -size)
-    glVertex3f(-size, -size, size)
-    glVertex3f(-size, size, size)
-    glVertex3f(-size, size, -size)
+    glTexCoord2f(0, 0); glVertex3f(-size, -size, -size)
+    glTexCoord2f(1, 0); glVertex3f(-size, -size, size)
+    glTexCoord2f(1, 1); glVertex3f(-size, size, size)
+    glTexCoord2f(0, 1); glVertex3f(-size, size, -size)
     # Direita
-    glVertex3f(size, -size, -size)
-    glVertex3f(size, -size, size)
-    glVertex3f(size, size, size)
-    glVertex3f(size, size, -size)
+    glTexCoord2f(0, 0); glVertex3f(size, -size, -size)
+    glTexCoord2f(1, 0); glVertex3f(size, -size, size)
+    glTexCoord2f(1, 1); glVertex3f(size, size, size)
+    glTexCoord2f(0, 1); glVertex3f(size, size, -size)
     # Topo
-    glVertex3f(-size, size, -size)
-    glVertex3f(size, size, -size)
-    glVertex3f(size, size, size)
-    glVertex3f(-size, size, size)
-    # Base
-    glVertex3f(-size, -size, -size)
-    glVertex3f(size, -size, -size)
-    glVertex3f(size, -size, size)
-    glVertex3f(-size, -size, size)
+    glTexCoord2f(0, 0); glVertex3f(-size, size, -size)
+    glTexCoord2f(1, 0); glVertex3f(size, size, -size)
+    glTexCoord2f(1, 1); glVertex3f(size, size, size)
+    glTexCoord2f(0, 1); glVertex3f(-size, size, size)
+    # Base (normalmente não visível)
+    glTexCoord2f(0, 0); glVertex3f(-size, -size, -size)
+    glTexCoord2f(1, 0); glVertex3f(size, -size, -size)
+    glTexCoord2f(1, 1); glVertex3f(size, -size, size)
+    glTexCoord2f(0, 1); glVertex3f(-size, -size, size)
     glEnd()
+
+    if 'skybox' in textures and textures['skybox'] is not None:
+        glDisable(GL_TEXTURE_2D)
 
     glDepthMask(GL_TRUE)
     glEnable(GL_DEPTH_TEST)
     glEnable(GL_LIGHTING)
+   
     glPopMatrix()
-
-
 def draw_walls():
-    glColor3f(0.6, 0.6, 0.6)  # Cor do muro
+    # Verifica se a textura dos muros está carregada
+    if 'wall' not in textures or textures['wall'] is None:
+        # Fallback: usa textura do prédio se disponível
+        if 'building' in textures and textures['building'] is not None:
+            glEnable(GL_TEXTURE_2D)
+            glBindTexture(GL_TEXTURE_2D, textures['building'])
+            glColor3f(1, 1, 1)
+        else:
+            # Fallback final: cor sólida
+            glDisable(GL_TEXTURE_2D)
+            glColor3f(0.6, 0.6, 0.6)
+    else:
+        # Usa a textura específica dos muros
+        glEnable(GL_TEXTURE_2D)
+        glBindTexture(GL_TEXTURE_2D, textures['wall'])
+        glColor3f(1, 1, 1)
+
     wall_height = 3
     size = 50
+    gate_width = 20  # Largura do portão
+    texture_repeat_horizontal = 10
+    texture_repeat_vertical = 1
 
     glBegin(GL_QUADS)
     # Fundo
-    glVertex3f(-size, 0, size)
-    glVertex3f(size, 0, size)
-    glVertex3f(size, wall_height, size)
-    glVertex3f(-size, wall_height, size)
+    glTexCoord2f(0, 0); glVertex3f(-size, 0, size)
+    glTexCoord2f(texture_repeat_horizontal, 0); glVertex3f(size, 0, size)
+    glTexCoord2f(texture_repeat_horizontal, texture_repeat_vertical); glVertex3f(size, wall_height, size)
+    glTexCoord2f(0, texture_repeat_vertical); glVertex3f(-size, wall_height, size)
 
     # Esquerda
-    glVertex3f(-size, 0, -size)
-    glVertex3f(-size, 0, size)
-    glVertex3f(-size, wall_height, size)
-    glVertex3f(-size, wall_height, -size)
+    glTexCoord2f(0, 0); glVertex3f(-size, 0, -size)
+    glTexCoord2f(texture_repeat_horizontal, 0); glVertex3f(-size, 0, size)
+    glTexCoord2f(texture_repeat_horizontal, texture_repeat_vertical); glVertex3f(-size, wall_height, size)
+    glTexCoord2f(0, texture_repeat_vertical); glVertex3f(-size, wall_height, -size)
 
     # Frente
-    glVertex3f(-size, 0, -size)
-    glVertex3f(size, 0, -size)
-    glVertex3f(size, wall_height, -size)
-    glVertex3f(-size, wall_height, -size)
+    glTexCoord2f(0, 0); glVertex3f(-size, 0, -size)
+    glTexCoord2f(texture_repeat_horizontal, 0); glVertex3f(size, 0, -size)
+    glTexCoord2f(texture_repeat_horizontal, texture_repeat_vertical); glVertex3f(size, wall_height, -size)
+    glTexCoord2f(0, texture_repeat_vertical); glVertex3f(-size, wall_height, -size)
 
-    # Direita - lado inferior ao portão
-    glVertex3f(size, 0, -size)
-    glVertex3f(size, 0, -10)
-    glVertex3f(size, wall_height, -10)
-    glVertex3f(size, wall_height, -size)
+    # Direita - parte inferior (antes do portão)
+    glTexCoord2f(0, 0); glVertex3f(size, 0, -size)
+    glTexCoord2f(texture_repeat_horizontal/4, 0); glVertex3f(size, 0, -gate_width/2)
+    glTexCoord2f(texture_repeat_horizontal/4, texture_repeat_vertical); glVertex3f(size, wall_height, -gate_width/2)
+    glTexCoord2f(0, texture_repeat_vertical); glVertex3f(size, wall_height, -size)
 
-    # Direita - lado superior ao portão
-    glVertex3f(size, 0, 10)
-    glVertex3f(size, 0, size)
-    glVertex3f(size, wall_height, size)
-    glVertex3f(size, wall_height, 10)
+    # Direita - parte superior (após o portão)
+    glTexCoord2f(0, 0); glVertex3f(size, 0, gate_width/2)
+    glTexCoord2f(texture_repeat_horizontal/4, 0); glVertex3f(size, 0, size)
+    glTexCoord2f(texture_repeat_horizontal/4, texture_repeat_vertical); glVertex3f(size, wall_height, size)
+    glTexCoord2f(0, texture_repeat_vertical); glVertex3f(size, wall_height, gate_width/2)
     glEnd()
 
-    # Portão prateado na direita (muro da direita)
-    glColor3f(0.75, 0.75, 0.75)
-    glBegin(GL_QUADS)
-    glVertex3f(size + 0.01, 0, -10)
-    glVertex3f(size + 0.01, 0, 10)
-    glVertex3f(size + 0.01, wall_height, 10)
-    glVertex3f(size + 0.01, wall_height, -10)
-    glEnd()
+    glDisable(GL_TEXTURE_2D)
+
+def draw_gate():
+    glPushMatrix()
+    # Posiciona o portão no muro direito
+    glTranslatef(50, 0, 0)  # Muro direito está em x=50
+    
+    gate_width = 20
+    gate_height = 4
+    
+    # Pilares do portão
+    glColor3f(0.4, 0.2, 0.1)  # Cor marrom para os pilares
+    pillar_width = 0.5
+    
+    # Pilar esquerdo
+    glPushMatrix()
+    glTranslatef(0, 0, -gate_width/2)
+    glScalef(pillar_width, gate_height, pillar_width)
+    glutSolidCube(1.0)
+    glPopMatrix()
+    
+    # Pilar direito
+    glPushMatrix()
+    glTranslatef(0, 0, gate_width/2)
+    glScalef(pillar_width, gate_height, pillar_width)
+    glutSolidCube(1.0)
+    glPopMatrix()
+    
+    # Parte superior do portão
+    glPushMatrix()
+    glTranslatef(0, gate_height, 0)
+    glScalef(pillar_width, 0.2, gate_width)
+    glutSolidCube(1.0)
+    glPopMatrix()
+    
+    # Grades do portão (opcional)
+    glColor3f(0.7, 0.7, 0.7)  # Cor cinza para as grades
+    bar_thickness = 0.1
+    num_bars = 5
+    
+    for i in range(num_bars):
+        y_pos = (gate_height * i) / num_bars
+        glPushMatrix()
+        glTranslatef(0, y_pos, 0)
+        glScalef(bar_thickness, bar_thickness, gate_width)
+        glutSolidCube(1.0)
+        glPopMatrix()
+    
+    glPopMatrix()
+
+
 
 def draw_collision_debug(player, collision_objects):
     glDisable(GL_LIGHTING)

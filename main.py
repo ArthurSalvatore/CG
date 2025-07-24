@@ -1,7 +1,7 @@
 from OpenGL.GL import *
 from OpenGL.GLUT import *
 from OpenGL.GLU import *
-import camera
+import camera as camera
 import player as player_module
 import scene
 import math
@@ -32,7 +32,10 @@ collision_objects = [
     
     # Guarita
     {'type': 'rectangle', 'coords': (46, 50, 12, 16)},
-    
+
+    # Pilares do portão
+    {'type': 'rectangle', 'coords': (49.5, 50.5, -10.5, -9.5)},  # Pilar esquerdo
+    {'type': 'rectangle', 'coords': (49.5, 50.5, 9.5, 10.5)},    # Pilar direito
     # Árvores 
     *[{'type': 'circle', 'coords': (x, -25, 0.8)} for x in range(-25, 26, 5)],
     
@@ -51,8 +54,10 @@ def keyboard(key, x, y):
 
 
 def init():
+    scene.init_textures()  # Adicione esta linha antes de outras inicializações
     glClearColor(0.5, 0.7, 1.0, 1.0)
     glEnable(GL_DEPTH_TEST)
+    glEnable(GL_STENCIL_TEST) 
     glEnable(GL_LIGHTING)
     glEnable(GL_LIGHT0)
     glLightfv(GL_LIGHT0, GL_POSITION, [0.0, -1, 0.0, 0.0])
@@ -65,7 +70,7 @@ def init():
     glMaterialf(GL_FRONT, GL_SHININESS, 50.0)
 
 def display():
-    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT)
     glMatrixMode(GL_MODELVIEW)
     glLoadIdentity()
 
@@ -73,7 +78,8 @@ def display():
     scene.draw_skybox()
     scene.draw_ground()
     scene.draw_walls()
-    scene.draw_guardhouse()   # Guarita após o muro para não ser sobreposta
+    scene.draw_gate()
+    scene.draw_guardhouse()  
     scene.draw_building()
     scene.draw_garage()
     scene.draw_leisure_area()
@@ -81,7 +87,7 @@ def display():
 
 
     player.draw()
-    scene.draw_collision_debug(player, collision_objects)  # Adicione esta linha
+    scene.draw_collision_debug(player, collision_objects)  # comente essa linha para desativar o debug
     glutSwapBuffers()
 
 def reshape(w, h):
