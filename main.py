@@ -55,8 +55,12 @@ def keyboard(key, x, y):
 
 def init():
     scene.init_textures()  # Adicione esta linha antes de outras inicializações
+    #scene.init_skybox_equi("textures/skybox.hdr")
     glClearColor(0.5, 0.7, 1.0, 1.0)
     glEnable(GL_DEPTH_TEST)
+    glEnable(GL_MULTISAMPLE)
+    glEnable(GL_POLYGON_SMOOTH)
+    glHint(GL_POLYGON_SMOOTH_HINT, GL_NICEST)
     glEnable(GL_STENCIL_TEST) 
     glEnable(GL_LIGHTING)
     glEnable(GL_LIGHT0)
@@ -66,8 +70,9 @@ def init():
     glLightModelfv(GL_LIGHT_MODEL_AMBIENT, [0.6, 0.6, 0.6, 1.0])
     glEnable(GL_COLOR_MATERIAL)
     glColorMaterial(GL_FRONT, GL_AMBIENT_AND_DIFFUSE)
-    glMaterialfv(GL_FRONT, GL_SPECULAR, [1.0, 1.0, 1.0, 1.0])
+    glMaterialfv(GL_FRONT, GL_SPECULAR, [1.0, 1.0, 1.0, 1.0])   
     glMaterialf(GL_FRONT, GL_SHININESS, 50.0)
+
 
 def display():
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT)
@@ -94,7 +99,7 @@ def reshape(w, h):
     glViewport(0, 0, w, h)
     glMatrixMode(GL_PROJECTION)
     glLoadIdentity()
-    gluPerspective(60, w / float(h), 1.0, 200.0)
+    gluPerspective(60, w / float(h), 1.0, 2000.0)
 
 def keyboard(key, x, y):
     if key == b'\x1b':
@@ -149,15 +154,20 @@ def cam():
 
 def main():
     glutInit()
-    glutInitDisplayMode(GLUT_DOUBLE | GLUT_RGB | GLUT_DEPTH)
+    glutInitDisplayMode(GLUT_DOUBLE | GLUT_RGB | GLUT_DEPTH  | GLUT_MULTISAMPLE)
     glutInitWindowSize(window_width, window_height)
     glutCreateWindow(b"Dia Ensolarado")
+    #scene.init_skybox_equi("textures/skybox.hdr")
+
+
     init()
+   
     glutDisplayFunc(display)
     glutReshapeFunc(reshape)
     glutIdleFunc(display)
     glutKeyboardFunc(keyboard)
     glutMainLoop()
+    
 
 if __name__ == "__main__":
     main()

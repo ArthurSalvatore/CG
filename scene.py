@@ -2,8 +2,81 @@ from OpenGL.GL import *
 from OpenGL.GLUT import *
 from OpenGL.GLU import *
 import numpy as np
+# from PIL import Image
+# from OpenGL.GL.shaders import compileProgram, compileShader
+# import glm
+# from OpenGL.GLUT import glutSolidCube
+
 
 textures = {}
+
+
+# #def init_skybox_equi(path):
+#     global hdr_tex, skybox_shader
+#     skybox_shader = compileProgram(
+#       compileShader(open("shaders/skybox.vert").read(), GL_VERTEX_SHADER),
+#       compileShader(open("shaders/skybox.frag").read(), GL_FRAGMENT_SHADER),
+#     )
+#     img = Image.open(path)
+#     data = np.array(img, dtype=np.float32)
+#     if data.max()>1.0: data /= 255.0
+#     h,w = data.shape[:2]
+#     hdr_tex = glGenTextures(1)
+#     glBindTexture(GL_TEXTURE_2D, hdr_tex)
+#     glTexImage2D(GL_TEXTURE_2D,0,GL_RGB16F,w,h,0,GL_RGB,GL_FLOAT,data)
+#     for p in (GL_TEXTURE_MIN_FILTER,GL_TEXTURE_MAG_FILTER):
+#         glTexParameteri(GL_TEXTURE_2D,p,GL_LINEAR)
+#     for p in (GL_TEXTURE_WRAP_S,GL_TEXTURE_WRAP_T):
+#         glTexParameteri(GL_TEXTURE_2D,p,GL_CLAMP_TO_EDGE)
+
+
+# #def load_shader(vert_path: str, frag_path: str) -> int:
+#     """Compila e linka um par de shaders GLSL."""
+#     with open(vert_path, 'r') as f:
+#         vert_src = f.read()
+#     with open(frag_path, 'r') as f:
+#         frag_src = f.read()
+#     return compileProgram(
+#         compileShader(vert_src, GL_VERTEX_SHADER),
+#         compileShader(frag_src, GL_FRAGMENT_SHADER),
+#     )
+
+
+# #def load_hdr_equirectangular(path: str) -> np.ndarray:
+#     """
+#     Carrega um arquivo Radiance .hdr (32‑bit float) via Pillow e retorna
+#     um array float32 shape (H, W, 3), normalizado em [0,∞).
+#     """
+#     img = Image.open(path)
+#     data = np.array(img, dtype=np.float32)
+#     # alguns plugins retornam 0..255, então normaliza se precisar:
+#     if data.max() > 1.0:
+#         data /= 255.0
+#     return data
+
+
+# def renderCube():
+#     """Desenha um cubo unitário usando GLUT."""
+#     glutSolidCube(1.0)
+
+
+
+# def draw_skybox_equi(camera):
+#     glDepthFunc(GL_LEQUAL)
+#     glUseProgram(skybox_shader)
+#     view = glm.mat4(camera.view_matrix)
+#     view[3][0]=view[3][1]=view[3][2]=0
+#     locp = glGetUniformLocation(skybox_shader,"projection")
+#     locv = glGetUniformLocation(skybox_shader,"view")
+#     locm = glGetUniformLocation(skybox_shader,"equirectangularMap")
+#     glUniformMatrix4fv(locp,1,GL_FALSE,glm.value_ptr(camera.projection_matrix))
+#     glUniformMatrix4fv(locv,1,GL_FALSE,glm.value_ptr(view))
+#     glActiveTexture(GL_TEXTURE0)
+#     glBindTexture(GL_TEXTURE_2D,hdr_tex)
+#     glUniform1i(locm,0)
+#     glutSolidCube(1.0)
+#     glUseProgram(0)
+#     glDepthFunc(GL_LESS)
 
 def load_png_as_texture(filepath):
     from PIL import Image
@@ -18,6 +91,15 @@ def load_png_as_texture(filepath):
 
         tex_id = glGenTextures(1)
         glBindTexture(GL_TEXTURE_2D, tex_id)
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR)
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S,   GL_CLAMP_TO_EDGE)
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, size[0], size[1], 0,
+              GL_RGB, GL_UNSIGNED_BYTE, img_data)
+        glGenerateMipmap(GL_TEXTURE_2D)
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR)
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR)
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE)
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE)
         glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, size[0], size[1], 0,
                     GL_RGB, GL_UNSIGNED_BYTE, img_data)
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR)
@@ -30,12 +112,24 @@ def load_png_as_texture(filepath):
         return None
 
 
+
+
+
+
 def init_textures():
     global textures
     from PIL import Image
     import numpy as np
-    
-    
+
+    # global hdr_tex, skybox_shader
+    # # 1) compile shader (depois de criar a janela GL)
+    # skybox_shader = load_shader(
+    #     "shaders/skybox.vert",
+    #     "shaders/skybox.frag"
+    # )
+    # # 2) load HDR texture
+   
+
     # Carrega a textura do chão
     try:
         img = Image.open("textures/ground_texture.jpg")
@@ -93,6 +187,7 @@ def init_textures():
 
     # Textura da skybox (existente)
     textures['skybox'] = load_png_as_texture("textures/skybox.png")
+    
 
 def draw_ground():
     """Desenha o chão do cenário com textura."""
@@ -387,62 +482,92 @@ def draw_leisure_area():
     glEnd()
 
     glPopMatrix()
+
 def draw_skybox():
-    size = 1000  # Aumente o tamanho da skybox
+    if 'skybox' not in textures or textures['skybox'] is None:
+        return
+
+    s = 1000.0  # half the cube side
+    W, H = 4.0, 3.0  # atlas columns and rows
+    # mapping of face to (col,row) in cross (row 0 is bottom)
+    face_pos = {
+        'left':   (0, 1),
+        'front':  (1, 1),
+        'right':  (2, 1),
+        'back':   (3, 1),
+        'top':    (1, 2),
+        'bottom': (1, 0),
+    }
+    def uv(col, row):
+        u0 = col / W; v0 = row / H
+        u1 = (col+1) / W; v1 = (row+1) / H
+        return u0, 1-v1, u1, 1-v0  # flip V for OpenGL
+
+    glPushAttrib(GL_ENABLE_BIT | GL_DEPTH_BUFFER_BIT | GL_TEXTURE_BIT)
     glPushMatrix()
+    # center on camera
+    m = glGetFloatv(GL_MODELVIEW_MATRIX)
+    m[3][0] = m[3][1] = m[3][2] = 0.0
+    glLoadMatrixf(m)
+
     glDisable(GL_LIGHTING)
     glDisable(GL_DEPTH_TEST)
     glDepthMask(GL_FALSE)
+    glDisable(GL_CULL_FACE)
 
-    if 'skybox' in textures and textures['skybox'] is not None:
-        glEnable(GL_TEXTURE_2D)
-        glBindTexture(GL_TEXTURE_2D, textures['skybox'])
-        glColor3f(1, 1, 1)  # Cor branca para textura pura
-    else:
-        glDisable(GL_TEXTURE_2D)
-        glColor3f(0.5, 0.7, 1.0)  # Fallback para cor azul
-
+    glEnable(GL_TEXTURE_2D)
+    glBindTexture(GL_TEXTURE_2D, textures['skybox'])
+    glColor3f(1.0,1.0,1.0)
     glBegin(GL_QUADS)
-    # Frente
-    glTexCoord2f(0, 0); glVertex3f(-size, -size, -size)
-    glTexCoord2f(1, 0); glVertex3f(size, -size, -size)
-    glTexCoord2f(1, 1); glVertex3f(size, size, -size)
-    glTexCoord2f(0, 1); glVertex3f(-size, size, -size)
-    # Fundo
-    glTexCoord2f(0, 0); glVertex3f(-size, -size, size)
-    glTexCoord2f(1, 0); glVertex3f(size, -size, size)
-    glTexCoord2f(1, 1); glVertex3f(size, size, size)
-    glTexCoord2f(0, 1); glVertex3f(-size, size, size)
-    # Esquerda
-    glTexCoord2f(0, 0); glVertex3f(-size, -size, -size)
-    glTexCoord2f(1, 0); glVertex3f(-size, -size, size)
-    glTexCoord2f(1, 1); glVertex3f(-size, size, size)
-    glTexCoord2f(0, 1); glVertex3f(-size, size, -size)
-    # Direita
-    glTexCoord2f(0, 0); glVertex3f(size, -size, -size)
-    glTexCoord2f(1, 0); glVertex3f(size, -size, size)
-    glTexCoord2f(1, 1); glVertex3f(size, size, size)
-    glTexCoord2f(0, 1); glVertex3f(size, size, -size)
-    # Topo
-    glTexCoord2f(0, 0); glVertex3f(-size, size, -size)
-    glTexCoord2f(1, 0); glVertex3f(size, size, -size)
-    glTexCoord2f(1, 1); glVertex3f(size, size, size)
-    glTexCoord2f(0, 1); glVertex3f(-size, size, size)
-    # Base (normalmente não visível)
-    glTexCoord2f(0, 0); glVertex3f(-size, -size, -size)
-    glTexCoord2f(1, 0); glVertex3f(size, -size, -size)
-    glTexCoord2f(1, 1); glVertex3f(size, -size, size)
-    glTexCoord2f(0, 1); glVertex3f(-size, -size, size)
+    # left (-X)
+    u0,v0,u1,v1 = uv(*face_pos['left'])
+    glTexCoord2f(u0,v0); glVertex3f(-s,-s, s)
+    glTexCoord2f(u1,v0); glVertex3f(-s,-s,-s)
+    glTexCoord2f(u1,v1); glVertex3f(-s, s,-s)
+    glTexCoord2f(u0,v1); glVertex3f(-s, s, s)
+    # front (+Z)
+    u0,v0,u1,v1 = uv(*face_pos['front'])
+    glTexCoord2f(u0,v1); glVertex3f(-s,-s, s)
+    glTexCoord2f(u0,v0); glVertex3f(-s, s, s)
+    glTexCoord2f(u1,v0); glVertex3f( s, s, s)
+    glTexCoord2f(u1,v1); glVertex3f( s,-s, s)
+    # right (+X)
+    u0,v0,u1,v1 = uv(*face_pos['right'])
+    glTexCoord2f(u1,v0); glVertex3f( s,-s,-s)
+    glTexCoord2f(u0,v0); glVertex3f( s,-s, s)
+    glTexCoord2f(u0,v1); glVertex3f( s, s, s)
+    glTexCoord2f(u1,v1); glVertex3f( s, s,-s)
+    # back (-Z)
+    u0,v0,u1,v1 = uv(*face_pos['back'])
+    glTexCoord2f(u1,v1); glVertex3f( s,-s,-s)
+    glTexCoord2f(u1,v0); glVertex3f( s, s,-s)
+    glTexCoord2f(u0,v0); glVertex3f(-s, s,-s)
+    glTexCoord2f(u0,v1); glVertex3f(-s,-s,-s)
+    # top (+Y)
+    u0,v0,u1,v1 = uv(*face_pos['top'])
+    glTexCoord2f(u0,v1); glVertex3f(-s, s,-s)
+    glTexCoord2f(u1,v1); glVertex3f( s, s,-s)
+    glTexCoord2f(u1,v0); glVertex3f( s, s, s)
+    glTexCoord2f(u0,v0); glVertex3f(-s, s, s)
+    # bottom (-Y)
+    u0,v0,u1,v1 = uv(*face_pos['bottom'])
+    glTexCoord2f(u0,v0); glVertex3f(-s,-s, s)
+    glTexCoord2f(u1,v0); glVertex3f( s,-s, s)
+    glTexCoord2f(u1,v1); glVertex3f( s,-s,-s)
+    glTexCoord2f(u0,v1); glVertex3f(-s,-s,-s)
     glEnd()
-
-    if 'skybox' in textures and textures['skybox'] is not None:
-        glDisable(GL_TEXTURE_2D)
 
     glDepthMask(GL_TRUE)
     glEnable(GL_DEPTH_TEST)
     glEnable(GL_LIGHTING)
-   
+    glEnable(GL_CULL_FACE)
+    glDisable(GL_TEXTURE_2D)
+
     glPopMatrix()
+    glPopAttrib()
+
+
+
 def draw_walls():
     # Verifica se a textura dos muros está carregada
     if 'wall' not in textures or textures['wall'] is None:
@@ -515,14 +640,14 @@ def draw_gate():
     
     # Pilar esquerdo
     glPushMatrix()
-    glTranslatef(0, 0, -gate_width/2)
+    glTranslatef(0, 2, -gate_width/2)
     glScalef(pillar_width, gate_height, pillar_width)
     glutSolidCube(1.0)
     glPopMatrix()
     
     # Pilar direito
     glPushMatrix()
-    glTranslatef(0, 0, gate_width/2)
+    glTranslatef(0, 2, gate_width/2)
     glScalef(pillar_width, gate_height, pillar_width)
     glutSolidCube(1.0)
     glPopMatrix()
