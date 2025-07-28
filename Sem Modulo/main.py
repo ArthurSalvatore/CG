@@ -159,7 +159,7 @@ def draw_text_centered(text, font=GLUT_BITMAP_HELVETICA_18):
     glPopMatrix()
     glMatrixMode(GL_MODELVIEW)
 
-#------------------------------
+
 def on_key_down(key, x, y):
     global show_door_msg, door_msg_time
     global show_car_msg, car_msg_time
@@ -199,7 +199,7 @@ def on_special_up(key, x, y):
         player.key_up(b'a')
     elif key == GLUT_KEY_RIGHT:
         player.key_up(b'd')
-#------------------------------------
+
 
 
 
@@ -215,12 +215,12 @@ def debug_draw_door_area():
     glDisable(GL_LIGHTING)
     glEnable(GL_BLEND)
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
-   # cor vermelho translúcido
+   
     glColor4f(1.0, 0.0, 0.0, 0.3)
 
     z0 = DOOR_Z_CENTER - DOOR_Z_RADIUS
     z1 = DOOR_Z_CENTER + DOOR_Z_RADIUS
-    y = 0.01  # ligeiramente acima do chão para não z-fight
+    y = 0.01  
 
     glBegin(GL_QUADS)
     glVertex3f(DOOR_X_MIN, y, z0)
@@ -234,7 +234,7 @@ def debug_draw_door_area():
 
 
 def is_near_door(player):
-    # Porta frontal do prédio: x ∈ [-9, -1], z≈20
+    
     return -4.0 <= player.x <= 4.0 and abs(player.z - 18.0) < 2
 
 
@@ -250,7 +250,7 @@ z_slot       = 13.0
 
 
 def is_near_car(player):
-    # mesmo loop usado no debug
+   
     for i in range(6):
          
         x = vaga_inicial + i * espacamento
@@ -332,17 +332,17 @@ def display():
     glMatrixMode(GL_MODELVIEW)
     glLoadIdentity()
 
-    # 1) Atualiza personagem
+    # Atualiza personagem
     player.update(collision_objects)
 
-    # 2) Seleciona câmera
+    # Seleciona câmera
     mode = player.camera_mode
     if   mode == 0: cam_first_person(player)
     elif mode == 1: cam_third_person(player)
     elif mode == 2: cam_top_down(player)
     else:           cam_security(player)
 
-    # 3) Desenha o mundo
+    # Desenha a cena
     glDisable(GL_LIGHTING)
     scene_old.draw_skybox()
     glEnable(GL_LIGHTING)
@@ -360,20 +360,17 @@ def display():
 
     debug_draw_door_area()
     debug_draw_car_area()
-    # 4) Desenha jogador
+    
     player.draw()
 
 
-  
 
-
-
-    # 5) Debug colisão
+    
     glDisable(GL_LIGHTING)
     scene_old.draw_collision_debug(player, collision_objects)
     glEnable(GL_LIGHTING)
 
-    # 6) Mensagem de porta fechada (em qualquer lugar ao pressionar F)
+    #  Mensagem de Porta 
     global show_door_msg
     if show_door_msg:
         elapsed = glutGet(GLUT_ELAPSED_TIME) - door_msg_time
@@ -383,7 +380,7 @@ def display():
             show_door_msg = False
 
 
-  # 7) Mensagem de carro sem chave
+  #  Mensagem de carro 
     global show_car_msg
     if show_car_msg:
         if glutGet(GLUT_ELAPSED_TIME) - car_msg_time < CAR_MSG_DURATION:
@@ -425,7 +422,7 @@ def keyboard(key, x, y):
     if key == b'\x1b':
         glutLeaveMainLoop()
     elif key == b'w':
-        # corrija para a assinatura real do seu método
+        
         player.move_forward(collision_objects)
     elif key == b's':
         player.move_backward(collision_objects)
@@ -436,12 +433,11 @@ def keyboard(key, x, y):
     elif key == b'c':            
         player.camera_mode = (player.camera_mode + 1) % 4
 
-    # tecla F para interagir com a porta
+   
     if key == b'f' or key == b'F':
         global show_door_msg, door_msg_time  
         if is_near_door(player):
             show_door_msg = True
-            # registra o instante em que a mensagem começou
             door_msg_time = glutGet(GLUT_ELAPSED_TIME)
 
 
@@ -472,7 +468,7 @@ def main():
     glutInit()
     glutInitDisplayMode(GLUT_DOUBLE | GLUT_RGB | GLUT_DEPTH |  GLUT_STENCIL | GLUT_MULTISAMPLE)
     glutInitWindowSize(window_width, window_height)
-    glutCreateWindow(b"Meu Projeto 3D")
+    glutCreateWindow(b"Dia Ensolarado - CG 2025.1")
 
     # Inicializações da cena
     glEnable(GL_DEPTH_TEST)

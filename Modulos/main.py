@@ -345,7 +345,7 @@ def on_key_down(key, x, y):
     
     glutPostRedisplay()
 
-#buffering de movimentação
+#Callbacks de movimentação
 
 def on_key_up(key, x, y):
     player.key_up(key)
@@ -372,7 +372,7 @@ def main():
     glutInit()
     glutInitDisplayMode(GLUT_DOUBLE | GLUT_RGB | GLUT_DEPTH)
     glutInitWindowSize(WINDOW_WIDTH, WINDOW_HEIGHT)
-    glutCreateWindow(b"Dia Ensolarado - Movimento Suave")
+    glutCreateWindow(b"Dia Ensolarado - CG 2025.1")
     
     init()
     
