@@ -261,7 +261,7 @@ class Wall:
             scale=scale,
             uv_scale=uv_scale
         )
-        # carrega textura 1×
+        
         self.base_fragment.texture_id = load_png_as_texture(texture_path)
         self.fragments = self._generate_fragments(frag_qtd, uv_scale)
 
@@ -300,7 +300,7 @@ class Floor:
             scale=scale
         )
         
-        # Gera mesh correta para o floor usando triângulos
+        
         sx, sy, sz = scale
         subdivisions = max(1, min(int(frag_qtd / (sx+sz)), 20))
         verts = []
@@ -309,12 +309,13 @@ class Floor:
         
         for i in range(subdivisions):
             for j in range(subdivisions):
+
                 # Calcula coordenadas do quad
                 x0 = -sx/2 + i * (sx/subdivisions)
                 x1 = -sx/2 + (i+1) * (sx/subdivisions)
                 z0 = -sz/2 + j * (sz/subdivisions)
                 z1 = -sz/2 + (j+1) * (sz/subdivisions)
-                y = 0  # Floor está no plano XZ
+                y = 0  
                 
                 # Vértices do quad no plano XZ (ordem anti-horária vista de cima)
                 v1 = (x0, y, z0)  # Bottom-left
@@ -333,7 +334,7 @@ class Floor:
                 uv3 = (u1, v1_uv)
                 uv4 = (u0, v1_uv)
                 
-                # Normal sempre apontando para cima
+                
                 normal = (0, 1, 0)
                 
                 # Primeiro triângulo: v1, v2, v3
@@ -372,16 +373,16 @@ class Gate:
         self.gate_height = gate_height
         self.pillar_width = pillar_width
         self.num_bars = num_bars
-        self.gate_offset = 0.0  # Controla o quanto o portão está aberto
+        self.gate_offset = 0.0  
         self.is_opening = False
         self.is_closing = False
-        self.max_opening = gate_width * 0.8  # Distância máxima de abertura (80% da largura)
+        self.max_opening = gate_width * 0.8  
         
-        # Carrega texturas
+        
         self.pillar_texture_id = load_png_as_texture(pillar_texture_path)
         self.bar_texture_id = load_png_as_texture(bar_texture_path)
         
-        # Cria fragmento base para colisão
+        
         self.base_fragment = Fragment(
             position=pos_initial,
             scale=(pillar_width, gate_height, gate_width)
@@ -393,7 +394,7 @@ class Gate:
         fragments = []
         x, y, z = self.pos_initial
         
-        # Pilar esquerdo (fixo)
+        # Pilar esquerdo 
         left_pillar = Fragment(
             position=(x, y + self.gate_height/2, z - self.gate_width/2),
             scale=(self.pillar_width, self.gate_height, self.pillar_width),
@@ -401,7 +402,7 @@ class Gate:
         )
         fragments.append(left_pillar)
         
-        # Pilar direito (fixo)
+        # Pilar direito 
         right_pillar = Fragment(
             position=(x, y + self.gate_height/2, z + self.gate_width/2),
             scale=(self.pillar_width, self.gate_height, self.pillar_width),
@@ -409,7 +410,7 @@ class Gate:
         )
         fragments.append(right_pillar)
         
-        # Viga superior (fixa)
+        # Viga superior 
         top_beam = Fragment(
             position=(x, y + self.gate_height, z),
             scale=(self.pillar_width, 0.3, self.gate_width),
@@ -446,7 +447,6 @@ class Gate:
         for i, frag in enumerate(self.fragments):
             glPushMatrix()
             
-            # Cor diferente para cada tipo de componente
             if i < 3:  # Pilares e viga superior
                 glColor3f(0.6, 0.4, 0.2)  # Marrom madeira
             else:
@@ -457,7 +457,7 @@ class Gate:
     
     def update(self, delta_time: float):
         """Atualiza a animação de abertura/fechamento do portão"""
-        opening_speed = 12.0  # Velocidade de abertura/fechamento
+        opening_speed = 12.0  
         
         if self.is_opening and self.gate_offset < self.max_opening:
             self.gate_offset += opening_speed * delta_time
@@ -487,7 +487,7 @@ class Gate:
         x, y, z = self.pos_initial
         
         if fragment_index < 3:
-            # Pilares e viga superior (fixos)
+            
             if fragment_index == 0:  # Pilar esquerdo
                 return (x, y + self.gate_height/2, z - self.gate_width/2)
             elif fragment_index == 1:  # Pilar direito
@@ -533,17 +533,16 @@ class Gate:
                 print("Revertendo para abrir...")
     
     def is_gate_blocking(self):
-        """Verifica se o portão está bloqueando a passagem"""
+        
         return self.gate_offset < self.gate_width * 0.6  # Considera bloqueado se não estiver 60% aberto
     
     def get_collision_fragments(self):
         """Retorna fragmentos para colisão"""
         collision_frags = []
-        
-        # Sempre adiciona pilares (sempre sólidos)
+
+        # Adiciona pilares e viga superior como fragmentos de colisão
         collision_frags.extend([self.fragments[0], self.fragments[1]])
         
-        # Se o portão estiver bloqueando, adiciona as grades
         if self.is_gate_blocking():
             # Adiciona grades como fragmentos de colisão
             for i in range(3, len(self.fragments)):
@@ -576,7 +575,6 @@ class Skybox:
         return u0, 1 - v1, u1, 1 - v0  # flip V para OpenGL
     
     def draw(self):
-        """Renderiza a skybox"""
         s = self.size / 2  # metade do tamanho do cubo
         
         glPushAttrib(GL_ENABLE_BIT | GL_DEPTH_BUFFER_BIT | GL_TEXTURE_BIT)

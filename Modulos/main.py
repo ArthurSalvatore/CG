@@ -345,6 +345,8 @@ def on_key_down(key, x, y):
     
     glutPostRedisplay()
 
+#buffering de movimentação
+
 def on_key_up(key, x, y):
     player.key_up(key)
     glutPostRedisplay()

@@ -16,7 +16,7 @@ class SceneBuilder:
             'skybox': None
         }
     
-    # Métodos existentes
+    
     def add_wall(self, pos, scale, frag_qtd=100, texture_path="textures/wall_texture.jpg", uv_scale=(1.0, 1.0)):
         wall = Wall(pos, scale, frag_qtd, texture_path, uv_scale)
         self.components['walls'].append(wall)
@@ -47,7 +47,7 @@ class SceneBuilder:
         self.components['skybox'] = Skybox(texture_path, size)
         return self.components['skybox']
     
-    # Novos métodos para os modelos modulares
+    
     def add_balcony(self, pos=(0, 10, -0.2), width=5.0, height=1.0, depth=0.2):
         balcony = Balcony(pos, width, height, depth)
         self.components['balconies'].append(balcony)
@@ -76,12 +76,12 @@ class SceneBuilder:
 
 
     def update(self, delta_time):
-        # Atualiza portões (animações)
+        # Atualiza portão (animações)
         for gate in self.components['gates']:
             gate.update(delta_time)
     
     def draw(self):
-        # Desenha skybox primeiro
+        # Desenha skybox 
         if self.components['skybox'] is not None:
             self.components['skybox'].draw()
         

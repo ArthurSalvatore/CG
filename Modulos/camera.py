@@ -14,34 +14,34 @@ class Camera:
         ]
         self.current_mode = 0
 
-        # Posição real da câmera (com atraso)
+        
         self.position = [0, 2, 0]
         self.target = [0, 0, 0]
         self.up = [0, 1, 0]
 
-        # Posição alvo (segue o player instantaneamente)
+        
         self.target_pos = [0, 2, 0]
         self.target_look = [0, 0, 0]
 
-        # Configurações de transição entre modos
-        self.transition_time = 0.5
-        self.transition_start = 0
+        # Transições suaves:
 
-        # Velocidade de "lag" da câmera (quanto menor, maior o atraso)
-        self.follow_speed = 4.0  
+        # self.transition_time = 0.5
+        # self.transition_start = 0
 
-        # Constantes para as câmeras (baseadas no código antigo)
+        
+        # self.follow_speed = 4.0  
+
         self.CAM_DISTANCE = 5.0
         self.CAM_HEIGHT = 2.0
-        self.TOPDOWN_HEIGHT = 100.0
+        self.TOPDOWN_HEIGHT = 70.0
 
     def toggle_mode(self):
-        """Alterna entre os modos de câmera"""
+        
         self.current_mode = (self.current_mode + 1) % len(self.modes)
         self.transition_start = time.time()
 
     def cam_first_person(self, player):
-        """Câmera em primeira pessoa"""
+        
         rad = math.radians(player.rotation)
         fx = math.sin(rad)
         fz = math.cos(rad)
@@ -52,7 +52,7 @@ class Camera:
         gluLookAt(*eye, *center, 0, 1, 0)
 
     def cam_third_person(self, player):
-        """Câmera em terceira pessoa"""
+        
         rad = math.radians(player.rotation)
         bx = math.sin(rad) * self.CAM_DISTANCE
         bz = math.cos(rad) * self.CAM_DISTANCE
@@ -63,7 +63,7 @@ class Camera:
         gluLookAt(*eye, *center, 0, 1, 0)
 
     def cam_top_down(self, player):
-        """Câmera de cima para baixo"""
+        
         eye = (player.position[0], player.position[1] + self.TOPDOWN_HEIGHT, player.position[2])
         center = (player.position[0], player.position[1], player.position[2])
         glMatrixMode(GL_MODELVIEW)
@@ -71,7 +71,7 @@ class Camera:
         gluLookAt(*eye, *center, 0, 0, -1)
 
     def cam_security(self, player):
-        """Câmera de segurança fixa"""
+        
         eye = (100.0, 60.0, -45.0)
         center = (0.0, 0.0, 0.0)
         glMatrixMode(GL_MODELVIEW)
@@ -79,7 +79,7 @@ class Camera:
         gluLookAt(*eye, *center, 0, 1, 0)
 
     def update(self, player, delta_time):
-        """Atualiza a posição da câmera baseada no modo atual"""
+        
         mode = self.current_mode
         
         # Aplica a câmera baseada no modo atual
